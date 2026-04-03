@@ -87,6 +87,6 @@ Current stage:
 
 ## Author
 
-Alex – Cybersecurity Student / Networking / Security / Homelab
+Alex – CS Student / Networking / Security / Homelab
 
 This project is part of my cybersecurity learning path and professional portfolio.
