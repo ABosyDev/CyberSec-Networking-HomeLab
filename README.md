@@ -37,16 +37,20 @@ The project is public for viewing only. All rights reserved.
 
 ## Network Architecture
 
-Internet → Home Router → OPNsense Firewall → Internal Lab Network → Virtual Machines
+Internet → Home Router → Proxmox → NAT Network → OPNsense Firewall → Internal Lab Network
 
-### Networks
+### Current Topology
 
-| Network | Address         | Description          |
-| ------- | --------------- | -------------------- |
-| WAN     | 192.168.10.0/24 | Home network         |
-| LAN     | 192.168.20.0/24 | Internal lab network |
+* Home Router: `192.168.10.1`
+* Proxmox: `192.168.10.50`
+* Proxmox NAT bridge (`vmbr2`): `10.0.0.1/24`
+* OPNsense WAN: `10.0.0.2`
+* OPNsense LAN: `192.168.20.1`
 
-The lab network is isolated from the home network.
+### Notes
+
+Due to router / MAC address limitations, the lab uses a double NAT architecture:
+Home Router → Proxmox NAT → OPNsense → Internal Lab Network
 
 ---
 
