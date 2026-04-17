@@ -3,9 +3,11 @@
 ## Project Description
 
 This project is a personal cybersecurity homelab built for learning, testing, and portfolio purposes.
-The goal of this project is to design, build, attack, monitor, and defend a virtual network environment that simulates a real company infrastructure.
 
-The project is public for viewing only. All rights reserved.
+The goal is to design, build, attack, monitor, and defend a virtual network environment that simulates a real company infrastructure.
+
+This lab is **scenario-driven**, not infrastructure-driven.
+The focus is on simulating attacks, analyzing traffic and logs, and developing SOC (Security Operations Center) skills.
 
 ---
 
@@ -14,13 +16,12 @@ The project is public for viewing only. All rights reserved.
 * Learn networking and network security in practice
 * Configure and manage a firewall (OPNsense)
 * Create a segmented network (WAN / LAN)
-* Install and configure virtual machines
 * Practice penetration testing (Kali Linux)
-* Detect attacks using IDS/IPS
-* Monitor logs using SIEM
-* Work with Active Directory (Windows Server)
-* Analyze network traffic (Wireshark, tcpdump)
+* Analyze network traffic (tcpdump, Wireshark)
+* Detect attacks using logs and IDS/IPS
+* Work with centralized logging and SIEM concepts
 * Simulate real-world cyber attacks and incident detection
+* Develop SOC workflow: alert → analysis → decision
 
 ---
 
@@ -43,28 +44,69 @@ Internet → Home Router → Proxmox → NAT Network → OPNsense Firewall → I
 
 * Home Router: `192.168.10.1`
 * Proxmox: `192.168.10.50`
-* Proxmox NAT bridge (`vmbr2`): `10.0.0.1/24`
+* Proxmox NAT (`vmbr2`): `10.0.0.1/24`
 * OPNsense WAN: `10.0.0.2`
 * OPNsense LAN: `192.168.20.1`
 
-### Notes
+### Internal Network
 
-Due to router / MAC address limitations, the lab uses a double NAT architecture:
-Home Router → Proxmox NAT → OPNsense → Internal Lab Network
+`192.168.20.0/24`
+
+---
+
+## Architecture Overview
+
+Kali (Attacker) → OPNsense (Firewall) → Target Machine
+↓
+Monitoring / SOC
+
+---
+
+## Log Flow (SOC Concept)
+
+All systems can send logs to a central monitoring node:
+
+Kali --------
+Target -------> Monitoring (Syslog / SIEM)
+Firewall ----/
+
+This enables event correlation and attack detection.
 
 ---
 
 ## Virtual Machines
 
-| VM             | Role                  | Network   |
-| -------------- | --------------------- | --------- |
-| OPNsense       | Firewall / Router     | WAN + LAN |
-| Kali Linux     | Attacker Machine      | LAN       |
-| Windows Server | Active Directory      | LAN       |
-| Ubuntu Server  | Target Server         | LAN       |
-| Metasploitable | Vulnerable Machine    | LAN       |
-| Wazuh          | SIEM / Log Monitoring | LAN       |
-| Pi-hole        | DNS Server            | LAN       |
+### Core (always running)
+
+| VM         | Role              | Network |
+| ---------- | ----------------- | ------- |
+| OPNsense   | Firewall / Router | WAN+LAN |
+| Kali Linux | Attacker          | LAN     |
+| Ubuntu     | Target Server     | LAN     |
+
+---
+
+### Optional (scenario-based)
+
+| VM             | Role               | Network |
+| -------------- | ------------------ | ------- |
+| Windows Server | Active Directory   | LAN     |
+| Metasploitable | Vulnerable Machine | LAN     |
+| Wazuh          | SIEM / Monitoring  | LAN     |
+| Pi-hole        | DNS Server         | LAN     |
+
+---
+
+## Resource Management
+
+Due to hardware limitations (16 GB RAM), not all virtual machines are running at the same time.
+
+The lab is scenario-based:
+
+* Core machines are always active
+* Additional machines are started depending on the scenario
+
+This reflects real-world environments where resources are dynamically managed.
 
 ---
 
@@ -73,90 +115,143 @@ Home Router → Proxmox NAT → OPNsense → Internal Lab Network
 * Proxmox VE (Virtualization)
 * OPNsense (Firewall)
 * Kali Linux (Penetration Testing)
-* Metasploit Framework (Exploitation)
-* Ubuntu Server (Linux Server)
+* Ubuntu Server (Target System)
 * Windows Server (Active Directory)
-* Wazuh (SIEM)
-* Suricata (IDS/IPS)
+* Wazuh (SIEM – future)
+* Suricata (IDS/IPS – future)
 * Wireshark (Packet Analysis)
 * tcpdump
-* VLAN
-* NAT
-* DHCP
-* DNS
-* VPN
+* Syslog (central logging)
+* NAT / DHCP / DNS / VLAN
+
+---
+
+## Approach (SOC Mindset)
+
+This lab is scenario-driven rather than infrastructure-driven.
+
+For each exercise:
+
+1. Generate traffic (normal or malicious)
+2. Capture packets (tcpdump / Wireshark)
+3. Analyze logs (system, firewall)
+4. Correlate events
+5. Draw conclusions
+
+Goal: think like a SOC analyst.
+
+---
+
+## Packet Analysis
+
+Tools:
+
+* tcpdump
+* Wireshark
+
+Example:
+
+tcpdump -i eth0
+
+Focus:
+
+* TCP handshake (SYN, SYN-ACK, ACK)
+* DNS queries
+* HTTP requests
 
 ---
 
 ## Attack Lab (Kali Linux)
 
-The lab includes an attacker machine (Kali Linux) used to simulate real-world attacks.
+Kali is used to simulate attacks inside the lab network.
 
-### Tools used
+### Tools
 
 * Nmap – network scanning
-* Metasploit – exploitation framework
+* Netcat – connections / reverse shells
+* curl – HTTP requests
 * Hydra – brute force attacks
-* Burp Suite – web application testing
-* SQLmap – SQL injection
-* John the Ripper – password cracking
-* Netcat – reverse shell
-* Wireshark – packet analysis
-
-### Attack scenarios
-
-* Port scanning
-* Brute force attacks (SSH, RDP, FTP)
-* Exploiting vulnerable services
-* Web application attacks (SQL Injection, XSS)
-* Reverse shell attacks
-* Lateral movement in the network
-* Malware simulation
-
-All attacks are performed inside the isolated lab network.
+* Metasploit – exploitation framework
+* Burp Suite – web testing
 
 ---
 
 ## Monitoring and Detection
 
-| Tool               | Purpose                          |
-| ------------------ | -------------------------------- |
-| OPNsense           | Firewall & Network Logs          |
-| Suricata           | IDS/IPS – Attack Detection       |
-| Wazuh              | SIEM – Log Collection & Analysis |
-| Wireshark          | Packet Analysis                  |
-| Windows Event Logs | User Activity Monitoring         |
-| Linux Logs         | SSH / System Logs                |
+| Tool       | Purpose           |
+| ---------- | ----------------- |
+| OPNsense   | Firewall logs     |
+| tcpdump    | Packet capture    |
+| Wireshark  | Traffic analysis  |
+| Linux logs | System / SSH logs |
+| Wazuh      | SIEM (planned)    |
+| Suricata   | IDS/IPS (planned) |
 
 ---
 
-## Example Lab Scenarios
+## Scenarios
 
-* Kali scans the network using Nmap
-* Suricata detects port scanning
-* Wazuh collects logs and generates alerts
-* Kali performs brute force attack on SSH
-* Wazuh detects multiple failed logins
-* Metasploit exploits a vulnerable service
-* Firewall logs show blocked/allowed traffic
-* Traffic is analyzed in Wireshark
+### 1. Port Scan Detection
+
+Kali:
+nmap -sS <target_ip>
+
+Analysis:
+
+* Firewall logs → multiple connections
+* Target logs → incoming attempts
+* Conclusion → port scan detected
+
+---
+
+### 2. SSH Brute Force
+
+Kali:
+multiple login attempts
+
+Analysis:
+
+* /var/log/auth.log → failed logins
+* Conclusion → brute force attack
+
+---
+
+### 3. HTTP Request Analysis
+
+Kali:
+curl http://<target_ip>
+
+Analysis:
+
+* tcpdump → captured packets
+* inspect headers and request
+
+---
+
+## SOC Workflow
+
+1. Event (log or traffic)
+2. Detection (something suspicious)
+3. Analysis (what happened)
+4. Correlation (multiple sources)
+5. Decision (attack or normal)
+6. Response (block / ignore)
 
 ---
 
 ## Project Status
 
-| Component              | Status      |
-| ---------------------- | ----------- |
-| Proxmox                | Completed   |
-| Network Configuration  | Completed   |
-| OPNsense Firewall      | In Progress |
-| Kali Linux             | Planned     |
-| Windows Server         | Planned     |
-| Ubuntu Server          | Planned     |
-| SIEM (Wazuh)           | Planned     |
-| IDS/IPS (Suricata)     | Planned     |
-| Attack Scenarios       | Planned     |
-| Monitoring & Detection | Planned     |
+| Component             | Status      |
+| --------------------- | ----------- |
+| Proxmox               | Completed   |
+| Network Configuration | Completed   |
+| OPNsense Firewall     | In Progress |
+| Kali Linux            | Completed   |
+| Ubuntu Server         | Planned     |
+| Windows Server        | Planned     |
+| SIEM (Wazuh)          | Planned     |
+| IDS/IPS (Suricata)    | Planned     |
+| Scenarios             | In Progress |
 
 ---
 
