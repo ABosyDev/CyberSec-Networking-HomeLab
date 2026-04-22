@@ -6,22 +6,18 @@ This project is a personal cybersecurity homelab built for learning, testing, an
 
 The goal is to design, build, attack, monitor, and defend a virtual network environment that simulates a real company infrastructure.
 
-This lab is **scenario-driven**, not infrastructure-driven.
-The focus is on simulating attacks, analyzing traffic and logs, and developing SOC (Security Operations Center) skills.
+The lab is **scenario-driven**, with a focus on traffic generation, analysis, detection, and response — following a Security Operations Center (SOC) mindset.
 
 ---
 
-## Project Goals
+## What This Project Demonstrates
 
-* Learn networking and network security in practice
-* Configure and manage a firewall (OPNsense)
-* Create a segmented network (WAN / LAN)
-* Practice penetration testing (Kali Linux)
-* Analyze network traffic (tcpdump, Wireshark)
-* Detect attacks using logs and IDS/IPS
-* Work with centralized logging and SIEM concepts
-* Simulate real-world cyber attacks and incident detection
-* Develop SOC workflow: alert → analysis → decision
+* Design and implementation of a segmented network architecture
+* Understanding of routing, NAT, and firewall behavior
+* Practical traffic analysis using tcpdump and Wireshark
+* Log analysis and event correlation
+* Detection of suspicious activity based on network and system behavior
+* Application of SOC workflow in a controlled lab environment
 
 ---
 
@@ -40,73 +36,43 @@ The focus is on simulating attacks, analyzing traffic and logs, and developing S
 
 Internet → Home Router → Proxmox → NAT Network → OPNsense Firewall → Internal Lab Network
 
-### Current Topology
+### Addressing
 
 * Home Router: `192.168.10.1`
 * Proxmox: `192.168.10.50`
 * Proxmox NAT (`vmbr2`): `10.0.0.1/24`
 * OPNsense WAN: `10.0.0.2`
 * OPNsense LAN: `192.168.20.1`
-
-### Internal Network
-
-`192.168.20.0/24`
+* Internal Network: `192.168.20.0/24`
 
 ---
 
 ## Architecture Overview
 
-Kali (Attacker) → OPNsense (Firewall) → Target Machine
-↓
-Monitoring / SOC
+```text
+Kali Linux (Attacker)
+        ↓
+Internal Network (Targets, Services)
+        ↓
+OPNsense Firewall (Routing, NAT, Logging, Filtering)
+        ↓
+Upstream Network / Internet
+```
 
----
-
-## Log Flow (SOC Concept)
-
-All systems can send logs to a central monitoring node:
-
-Kali --------
-Target -------> Monitoring (Syslog / SIEM)
-Firewall ----/
-
-This enables event correlation and attack detection.
+All traffic flows through the firewall, where it is logged, inspected, and controlled.
 
 ---
 
 ## Virtual Machines
 
-### Core (always running)
-
-| VM         | Role              | Network |
-| ---------- | ----------------- | ------- |
-| OPNsense   | Firewall / Router | WAN+LAN |
-| Kali Linux | Attacker          | LAN     |
-| Ubuntu     | Target Server     | LAN     |
-
----
-
-### Optional (scenario-based)
-
-| VM             | Role               | Network |
-| -------------- | ------------------ | ------- |
-| Windows Server | Active Directory   | LAN     |
-| Metasploitable | Vulnerable Machine | LAN     |
-| Wazuh          | SIEM / Monitoring  | LAN     |
-| Pi-hole        | DNS Server         | LAN     |
-
----
-
-## Resource Management
-
-Due to hardware limitations (16 GB RAM), not all virtual machines are running at the same time.
-
-The lab is scenario-based:
-
-* Core machines are always active
-* Additional machines are started depending on the scenario
-
-This reflects real-world environments where resources are dynamically managed.
+| VM             | Role                       | Network |
+| -------------- | -------------------------- | ------- |
+| OPNsense       | Firewall / Router          | WAN+LAN |
+| Kali Linux     | Attacker                   | LAN     |
+| Ubuntu Server  | Target System              | LAN     |
+| Windows Server | Active Directory / Client  | LAN     |
+| Metasploitable | Vulnerable Machine         | LAN     |
+| Wazuh          | SIEM / Centralized Logging | LAN     |
 
 ---
 
@@ -115,143 +81,103 @@ This reflects real-world environments where resources are dynamically managed.
 * Proxmox VE (Virtualization)
 * OPNsense (Firewall)
 * Kali Linux (Penetration Testing)
-* Ubuntu Server (Target System)
-* Windows Server (Active Directory)
-* Wazuh (SIEM – future)
-* Suricata (IDS/IPS – future)
-* Wireshark (Packet Analysis)
+* Ubuntu Server (Linux Target)
+* Windows Server (Directory Services)
+* Wazuh (SIEM)
+* Suricata (IDS/IPS)
 * tcpdump
-* Syslog (central logging)
+* Wireshark
+* Syslog
 * NAT / DHCP / DNS / VLAN
 
 ---
 
-## Approach (SOC Mindset)
+## SOC Approach
 
-This lab is scenario-driven rather than infrastructure-driven.
+The lab is designed to simulate the workflow of a Security Operations Center.
 
-For each exercise:
+Core methodology:
 
-1. Generate traffic (normal or malicious)
-2. Capture packets (tcpdump / Wireshark)
-3. Analyze logs (system, firewall)
-4. Correlate events
-5. Draw conclusions
-
-Goal: think like a SOC analyst.
-
----
-
-## Packet Analysis
-
-Tools:
-
-* tcpdump
-* Wireshark
-
-Example:
-
-tcpdump -i eth0
-
-Focus:
-
-* TCP handshake (SYN, SYN-ACK, ACK)
-* DNS queries
-* HTTP requests
+1. Generate traffic (normal and malicious)
+2. Capture network packets
+3. Analyze logs from multiple sources
+4. Correlate events across systems
+5. Identify anomalies and suspicious patterns
+6. Make decisions based on observed behavior
 
 ---
 
-## Attack Lab (Kali Linux)
+## Traffic and Log Analysis
 
-Kali is used to simulate attacks inside the lab network.
+The environment enables full visibility into:
 
-### Tools
+* Network traffic (packet level)
+* Firewall decisions and logs
+* System authentication and process logs
+* DNS queries and responses
+* Application-level requests
 
-* Nmap – network scanning
-* Netcat – connections / reverse shells
-* curl – HTTP requests
-* Hydra – brute force attacks
-* Metasploit – exploitation framework
-* Burp Suite – web testing
+Analysis focuses on:
+
+* TCP handshake behavior
+* Connection patterns
+* Frequency and anomalies
+* Source and destination relationships
+
+---
+
+## Attack Surface and Simulation
+
+The lab supports controlled simulation of:
+
+* Network scanning and enumeration
+* Authentication attacks (e.g., brute force)
+* Service interaction and probing
+* Web traffic inspection
+* Lateral movement inside the network
+
+All activities are performed within an isolated environment.
 
 ---
 
 ## Monitoring and Detection
 
-| Tool       | Purpose           |
-| ---------- | ----------------- |
-| OPNsense   | Firewall logs     |
-| tcpdump    | Packet capture    |
-| Wireshark  | Traffic analysis  |
-| Linux logs | System / SSH logs |
-| Wazuh      | SIEM (planned)    |
-| Suricata   | IDS/IPS (planned) |
+| Tool       | Purpose                        |
+| ---------- | ------------------------------ |
+| OPNsense   | Firewall logging and filtering |
+| tcpdump    | Packet capture                 |
+| Wireshark  | Deep traffic analysis          |
+| Linux logs | System and authentication logs |
+| Wazuh      | Centralized logging and SIEM   |
+| Suricata   | Intrusion detection and alerts |
 
 ---
 
-## Scenarios
+## Network Security Model
 
-### 1. Port Scan Detection
-
-Kali:
-nmap -sS <target_ip>
-
-Analysis:
-
-* Firewall logs → multiple connections
-* Target logs → incoming attempts
-* Conclusion → port scan detected
-
----
-
-### 2. SSH Brute Force
-
-Kali:
-multiple login attempts
-
-Analysis:
-
-* /var/log/auth.log → failed logins
-* Conclusion → brute force attack
-
----
-
-### 3. HTTP Request Analysis
-
-Kali:
-curl http://<target_ip>
-
-Analysis:
-
-* tcpdump → captured packets
-* inspect headers and request
+* Full network segmentation (WAN / NAT / LAN)
+* All internal traffic routed through firewall
+* No direct access from home network to lab
+* Double NAT used as isolation layer
+* Controlled environment for offensive testing
+* Centralized visibility for detection and analysis
 
 ---
 
 ## SOC Workflow
 
-1. Event (log or traffic)
-2. Detection (something suspicious)
-3. Analysis (what happened)
-4. Correlation (multiple sources)
-5. Decision (attack or normal)
-6. Response (block / ignore)
+1. Event generation (traffic or log)
+2. Detection of unusual behavior
+3. Analysis of network and system data
+4. Correlation between multiple sources
+5. Decision (benign vs malicious)
+6. Response (block, monitor, ignore)
 
 ---
 
 ## Project Status
 
-| Component             | Status      |
-| --------------------- | ----------- |
-| Proxmox               | Completed   |
-| Network Configuration | Completed   |
-| OPNsense Firewall     | In Progress |
-| Kali Linux            | Completed   |
-| Ubuntu Server         | Planned     |
-| Windows Server        | Planned     |
-| SIEM (Wazuh)          | Planned     |
-| IDS/IPS (Suricata)    | Planned     |
-| Scenarios             | In Progress |
+The lab represents a complete and functional cybersecurity environment designed for continuous testing, analysis, and skill development.
 
 ---
 
@@ -259,4 +185,4 @@ Analysis:
 
 Alex – Cybersecurity / Networking / Homelab Project
 
-This project is part of my cybersecurity learning path and professional portfolio.
+This project represents a practical, hands-on approach to learning networking and cybersecurity through real-world simulation.
