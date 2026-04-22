@@ -2,104 +2,64 @@
 
 ## Status
 
-Working configuration completed.
-
-## VM Configuration
-
-* CPU: 2 cores
-* RAM: 4 GB
-* Disk: 20 GB
-* BIOS: SeaBIOS
-* Machine: q35
-
-## Network Interfaces
-
-* WAN: `vtnet1`
-* LAN: `vtnet0`
-
-## Addressing
-
-* WAN: `10.0.0.2/24`
-* WAN Gateway: `10.0.0.1`
-* LAN: `192.168.20.1/24`
-* DHCP Range: `192.168.20.10 - 192.168.20.100`
-
-## Proxmox Bridge Mapping
-
-* `vmbr2` → OPNsense WAN
-* `vmbr1` → OPNsense LAN
-
-## Final Result
-# OPNsense Firewall
-
-## Status
-
-Working configuration completed.
-
-The firewall is fully operational and provides routing, NAT, and network segmentation for the homelab environment.
+**Working** — routing, NAT, and DHCP fully operational.
 
 ---
 
 ## VM Configuration
 
-- CPU: 2 cores
-- RAM: 4 GB
-- Disk: 20 GB
-- BIOS: SeaBIOS
-- Machine: q35
+| Parameter | Value    |
+| --------- | -------- |
+| CPU       | 2 cores  |
+| RAM       | 4 GB     |
+| Disk      | 20 GB    |
+| BIOS      | SeaBIOS  |
+| Machine   | q35      |
 
 ---
 
 ## Network Interfaces
 
-- WAN: `vtnet1`
-- LAN: `vtnet0`
+| Interface | Bridge | Address         |
+| --------- | ------ | --------------- |
+| WAN       | vmbr2  | 10.0.0.2/24     |
+| LAN       | vmbr1  | 192.168.20.1/24 |
 
----
-
-## Addressing
-
-- WAN: `10.0.0.2/24`
 - WAN Gateway: `10.0.0.1`
-- LAN: `192.168.20.1/24`
-- DHCP Range: `192.168.20.10 - 192.168.20.100`
-
----
-
-## Proxmox Bridge Mapping
-
-- `vmbr2` → OPNsense WAN (NAT network)
-- `vmbr1` → OPNsense LAN (internal lab network)
+- DHCP Range: `192.168.20.10 – 192.168.20.100`
 
 ---
 
 ## Network Architecture
 
-
+```text
 Internet
 ↓
 Home Router (192.168.10.1)
 ↓
-Proxmox (NAT - vmbr2 → 10.0.0.0/24)
+Proxmox NAT (vmbr2 → 10.0.0.0/24)
 ↓
 OPNsense WAN (10.0.0.2)
 OPNsense LAN (192.168.20.1)
 ↓
 Lab Machines (Kali, Ubuntu, etc.)
-
-
----
-
-## Connectivity
-
-- OPNsense can reach gateway: ✔ `10.0.0.1`
-- OPNsense has internet access: ✔
-- LAN clients receive IP via DHCP: ✔
-- NAT (LAN → WAN) is working: ✔
+```
 
 ---
 
-## Firewall
+## Connectivity Status
+
+| Check                          | Status |
+| ------------------------------ | ------ |
+| OPNsense reaches gateway       | ✔      |
+| OPNsense has internet access   | ✔      |
+| LAN clients receive IP (DHCP)  | ✔      |
+| NAT (LAN → WAN)                | ✔      |
+| DNS resolution via OPNsense    | ❌     |
+
+---
+
+## Firewall Rules
 
 - Default rule: **Allow LAN to any**
 - No custom rules configured yet
@@ -107,82 +67,43 @@ Lab Machines (Kali, Ubuntu, etc.)
 
 ---
 
-## DNS Status
+## DNS Issue
 
-- Internet connectivity works (ICMP / IP level)
-- DNS resolution via OPNsense: ❌ not working
+Internet connectivity works at IP level, but DNS resolution through OPNsense (Unbound) is not working.
 
-### Observed behavior:
-
+**Symptoms:**
 - `ping 8.8.8.8` → ✔ works
 - `ping google.com` → ❌ fails
 
-### Temporary workaround:
+**Root cause:** Unbound DNS resolver misconfiguration.
 
-Manual DNS configuration on client (Kali Linux):
+**Temporary workaround** — manual DNS on client (`/etc/resolv.conf`):
 
-
-/etc/resolv.conf
-
+```
 nameserver 8.8.8.8
 nameserver 1.1.1.1
+```
 
-
-### Status:
-
-- Root cause: Unbound DNS resolver configuration
-- Not blocking lab progress
-- Will be fixed later
+This does not block lab progress. Fix planned as part of next configuration phase.
 
 ---
 
-## Troubleshooting
+## Design Notes
 
-### Issue: DNS resolution failure
+Initial design used direct WAN bridging to the home network. This failed due to home router limitations — the router did not properly handle the virtualized network path.
 
-#### Symptoms:
-- Internet reachable via IP
-- Domain names not resolving
+**Final solution:** Proxmox NAT (`vmbr2`) used as the upstream network for OPNsense WAN. This provides:
 
-#### Diagnosis:
-- Verified routing and NAT (working)
-- Isolated issue to DNS layer
-
-#### Action taken:
-- Applied manual DNS configuration on client
-
----
-
-## Notes
-
-Initial design using direct WAN access (bridged to home network) did not work due to router limitations.
-
-Final working solution:
-
-- Proxmox NAT (`vmbr2`) used as upstream network
-- OPNsense WAN connected to NAT network
-- Internal LAN isolated behind firewall
-
-This design provides:
-
-- Full control over traffic
-- Safe environment for attack simulation
-- Clear separation between lab and home network
+- Full control over traffic flow
+- Safe isolation between lab and home network
+- Clear layer boundary for firewall operation
 
 ---
 
 ## Next Steps
 
-- Fix DNS configuration in OPNsense (Unbound)
-- Add IDS/IPS (Suricata)
-- Connect SIEM (Wazuh)
-- Begin attack simulation and log analysis
-* OPNsense can reach `10.0.0.1`
-* OPNsense has internet access
-* NAT is working
-* Internal lab network is ready for client VMs
-
-## Notes
-
-The first direct WAN design did not work because the home router did not properly allow the required virtualized network path.
-The final working solution uses Proxmox NAT (`vmbr2`) as the upstream network for OPNsense WAN.
+- [ ] Fix DNS — configure Unbound resolver in OPNsense
+- [ ] Add IDS/IPS — deploy Suricata
+- [ ] Connect SIEM — Wazuh agent forwarding
+- [ ] Add custom firewall rules per segment
+- [ ] Begin attack simulation and log analysis

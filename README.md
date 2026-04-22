@@ -12,12 +12,12 @@ The lab is **scenario-driven**, with a focus on traffic generation, analysis, de
 
 ## What This Project Demonstrates
 
-* Design and implementation of a segmented network architecture
-* Understanding of routing, NAT, and firewall behavior
-* Practical traffic analysis using tcpdump and Wireshark
-* Log analysis and event correlation
-* Detection of suspicious activity based on network and system behavior
-* Application of SOC workflow in a controlled lab environment
+- Design and implementation of a segmented network architecture
+- Understanding of routing, NAT, and firewall behavior
+- Practical traffic analysis using tcpdump and Wireshark
+- Log analysis and event correlation
+- Detection of suspicious activity based on network and system behavior
+- Application of SOC workflow in a controlled lab environment
 
 ---
 
@@ -34,109 +34,75 @@ The lab is **scenario-driven**, with a focus on traffic generation, analysis, de
 
 ## Network Architecture
 
-Internet → Home Router → Proxmox → NAT Network → OPNsense Firewall → Internal Lab Network
+```text
+Internet
+   |
+Home Router (192.168.10.1)
+   |
+Proxmox Host (192.168.10.50)
+   |
+Proxmox NAT vmbr2 (10.0.0.0/24)
+   |
+OPNsense WAN (10.0.0.2) → OPNsense LAN (192.168.20.1)
+   |
+Internal Lab Network (192.168.20.0/24)
+   |
+Kali | Ubuntu | Windows | Wazuh | Metasploitable
+```
+
+All traffic flows through OPNsense, where it is logged, inspected, and controlled.
 
 ### Addressing
 
-* Home Router: `192.168.10.1`
-* Proxmox: `192.168.10.50`
-* Proxmox NAT (`vmbr2`): `10.0.0.1/24`
-* OPNsense WAN: `10.0.0.2`
-* OPNsense LAN: `192.168.20.1`
-* Internal Network: `192.168.20.0/24`
-
----
-
-## Architecture Overview
-
-```text
-Kali Linux (Attacker)
-        ↓
-Internal Network (Targets, Services)
-        ↓
-OPNsense Firewall (Routing, NAT, Logging, Filtering)
-        ↓
-Upstream Network / Internet
-```
-
-All traffic flows through the firewall, where it is logged, inspected, and controlled.
+| Device          | Interface | IP Address       |
+| --------------- | --------- | ---------------- |
+| Home Router     | LAN       | 192.168.10.1     |
+| Proxmox         | vmbr0     | 192.168.10.50    |
+| Proxmox NAT     | vmbr2     | 10.0.0.1         |
+| OPNsense        | WAN       | 10.0.0.2         |
+| OPNsense        | LAN       | 192.168.20.1     |
+| Lab Clients     | LAN       | 192.168.20.10–100|
 
 ---
 
 ## Virtual Machines
 
-| VM             | Role                       | Network |
-| -------------- | -------------------------- | ------- |
-| OPNsense       | Firewall / Router          | WAN+LAN |
-| Kali Linux     | Attacker                   | LAN     |
-| Ubuntu Server  | Target System              | LAN     |
-| Windows Server | Active Directory / Client  | LAN     |
-| Metasploitable | Vulnerable Machine         | LAN     |
-| Wazuh          | SIEM / Centralized Logging | LAN     |
+| VM             | Role                       | Network | Status      |
+| -------------- | -------------------------- | ------- | ----------- |
+| OPNsense       | Firewall / Router          | WAN+LAN | ✔ Running   |
+| Kali Linux     | Attacker                   | LAN     | ✔ Running   |
+| Ubuntu Server  | Target System              | LAN     | Planned     |
+| Windows Server | Active Directory / Client  | LAN     | Planned     |
+| Metasploitable | Vulnerable Machine         | LAN     | Planned     |
+| Wazuh          | SIEM / Centralized Logging | LAN     | Planned     |
 
 ---
 
 ## Technologies Used
 
-* Proxmox VE (Virtualization)
-* OPNsense (Firewall)
-* Kali Linux (Penetration Testing)
-* Ubuntu Server (Linux Target)
-* Windows Server (Directory Services)
-* Wazuh (SIEM)
-* Suricata (IDS/IPS)
-* tcpdump
-* Wireshark
-* Syslog
-* NAT / DHCP / DNS / VLAN
+| Category        | Tools                              |
+| --------------- | ---------------------------------- |
+| Virtualization  | Proxmox VE                         |
+| Firewall        | OPNsense                           |
+| Offensive       | Kali Linux                         |
+| Targets         | Ubuntu Server, Windows Server, Metasploitable |
+| SIEM / Logging  | Wazuh, Syslog                      |
+| IDS/IPS         | Suricata                           |
+| Traffic Analysis| tcpdump, Wireshark                 |
+| Networking      | NAT, DHCP, DNS, VLAN               |
 
 ---
 
-## SOC Approach
+## SOC Workflow
 
-The lab is designed to simulate the workflow of a Security Operations Center.
+The lab simulates the core workflow of a Security Operations Center:
 
-Core methodology:
-
-1. Generate traffic (normal and malicious)
-2. Capture network packets
-3. Analyze logs from multiple sources
-4. Correlate events across systems
-5. Identify anomalies and suspicious patterns
-6. Make decisions based on observed behavior
-
----
-
-## Traffic and Log Analysis
-
-The environment enables full visibility into:
-
-* Network traffic (packet level)
-* Firewall decisions and logs
-* System authentication and process logs
-* DNS queries and responses
-* Application-level requests
-
-Analysis focuses on:
-
-* TCP handshake behavior
-* Connection patterns
-* Frequency and anomalies
-* Source and destination relationships
-
----
-
-## Attack Surface and Simulation
-
-The lab supports controlled simulation of:
-
-* Network scanning and enumeration
-* Authentication attacks (e.g., brute force)
-* Service interaction and probing
-* Web traffic inspection
-* Lateral movement inside the network
-
-All activities are performed within an isolated environment.
+1. **Generate** traffic (normal and malicious)
+2. **Capture** network packets at the firewall and endpoint level
+3. **Analyze** logs from multiple sources
+4. **Correlate** events across network and system layers
+5. **Identify** anomalies and suspicious patterns
+6. **Respond** — block, monitor, or escalate
 
 ---
 
@@ -155,34 +121,51 @@ All activities are performed within an isolated environment.
 
 ## Network Security Model
 
-* Full network segmentation (WAN / NAT / LAN)
-* All internal traffic routed through firewall
-* No direct access from home network to lab
-* Double NAT used as isolation layer
-* Controlled environment for offensive testing
-* Centralized visibility for detection and analysis
+- Full network segmentation (WAN / NAT / LAN)
+- All internal traffic routed through OPNsense firewall
+- No direct access from home network to lab
+- Double NAT used as isolation layer
+- Controlled environment for offensive testing
+- Centralized visibility for detection and analysis
 
 ---
 
-## SOC Workflow
+## Project Structure
 
-1. Event generation (traffic or log)
-2. Detection of unusual behavior
-3. Analysis of network and system data
-4. Correlation between multiple sources
-5. Decision (benign vs malicious)
-6. Response (block, monitor, ignore)
+| Folder                           | Content                        |
+| -------------------------------- | ------------------------------ |
+| [01_Proxmox](./01_Proxmox/)      | Hypervisor setup and configuration |
+| [02_Network](./02_Network/)      | Network design and addressing  |
+| [03_OPNsense](./03_OPNsense/)    | Firewall setup, NAT, DNS       |
+| [04_Kali](./04_Kali/)            | Attacker machine configuration |
+| [05_Windows](./05_Windows/)      | Active Directory setup         |
+| [06_Ubuntu](./06_Ubuntu/)        | Linux target configuration     |
+| [07_Wazuh](./07_Wazuh/)          | SIEM deployment and rules      |
+| [08_Attacks](./08_Attacks/)      | Attack scenarios and notes     |
+| [09_Logs](./09_Logs/)            | Log analysis and findings      |
 
 ---
 
 ## Project Status
 
-The lab represents a complete and functional cybersecurity environment designed for continuous testing, analysis, and skill development.
+**In progress** — early stage.
+
+- [x] Proxmox hypervisor installed and configured
+- [x] Network segmentation designed and implemented
+- [x] OPNsense firewall deployed (routing, NAT, DHCP working)
+- [x] Kali Linux connected to internal lab network
+- [ ] DNS resolution via OPNsense (Unbound) — in progress
+- [ ] Ubuntu Server target machine
+- [ ] Windows Server / Active Directory
+- [ ] Metasploitable vulnerable machine
+- [ ] Wazuh SIEM deployment
+- [ ] Suricata IDS/IPS
+- [ ] Attack scenarios and log analysis
 
 ---
 
 ## Author
 
-Alex – Cybersecurity / Networking / Homelab Project
+Alex — Cybersecurity / Networking / Homelab Project
 
-This project represents a practical, hands-on approach to learning networking and cybersecurity through real-world simulation.
+Hands-on approach to learning networking and cybersecurity through real-world simulation.
